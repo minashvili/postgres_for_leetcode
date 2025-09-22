@@ -13,6 +13,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  web:
+    build: fill_data_webapp
+    container_name: fastapi_app
+    env_file:
+      - .env
+    ports:
+      - "8005:8005"
+    depends_on:
+      - postgres
+    volumes:
+      - ./fill_data_webapp:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
+
   postgres_exporter:
     image: quay.io/prometheuscommunity/postgres-exporter
     container_name: postgres_exporter
