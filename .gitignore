@@ -1,1 +1,25 @@
 .env
+# IDE
+.idea/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.~*
+
+# Virtualenv
+.venv/
+venv/
+ENV/
+
+# Docker
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
