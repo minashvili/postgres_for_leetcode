@@ -6,8 +6,7 @@ from typing import List
 from faker import Faker
 
 from config import Settings
-from models import Field
-
+from models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -36,15 +35,15 @@ def get_db_conn(settings: Settings):
 
 def generate_value(field_type: str, fake: Faker):
     match field_type:
-        case "string":
+        case FieldType.string:
             return fake.word()
-        case "int":
+        case FieldType.int:
             return random.randint(0, 1000)
-        case "email":
+        case FieldType.email:
             return fake.email()
-        case "date":
+        case FieldType.date:
             return fake.date()
-        case "float":
+        case FieldType.float:
             return random.random()
         case _:
             return fake.word()
@@ -81,12 +80,15 @@ def get_columns_definition(fields: List[Field]):
 
     columns_sql = []
     for f in fields:
-        if f.type == "int":
-            col_type = "INTEGER"
-        elif f.type == "date":
-            col_type = "DATE"
-        else:
-            col_type = "TEXT"
+        match f.type:
+            case FieldType.int:
+                col_type = "INTEGER"
+            case FieldType.date:
+                col_type = "DATE"
+            case FieldType.float:
+                col_type = "REAL"
+            case _:
+                col_type = "TEXT"
         columns_sql.append(f"{f.name} {col_type}")
     columns_def = ", ".join(columns_sql)
 

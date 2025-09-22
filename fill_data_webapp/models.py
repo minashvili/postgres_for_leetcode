@@ -1,10 +1,20 @@
+from enum import Enum
+
 from pydantic import BaseModel
 from typing import List
 
 
+class FieldType(str, Enum):
+    string = "string"
+    int = "int"
+    email = "email"
+    date = "date"
+    float = "float"
+
+
 class Field(BaseModel):
     name: str
-    type: str
+    type: FieldType
 
 
 class Payload(BaseModel):
