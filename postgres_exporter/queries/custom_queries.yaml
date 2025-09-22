@@ -1,0 +1,6 @@
+vacuum_too_slow:
+  query: "SELECT 1 AS vacuum_too_slow;"
+  metrics:
+    - vacuum_too_slow:
+        usage: "GAUGE"
+        description: "Test metric for custom SQL"
