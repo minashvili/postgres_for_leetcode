@@ -22,6 +22,5 @@ docker-compose up -d
 | Grafana       | http://localhost:3000/dashboards             | Dashboards, login/password from .env |
 | Prometheus    | http://localhost:9090/targets                | Monitoring targets                   |
 | Postgres      | localhost:5432                               | Connect with client (pgAdmin, psql)  |
-| pgAdmin       | http://localhost:5050                        | Web interface for Postgres           |
 +---------------+----------------------------------------------+--------------------------------------+
 
