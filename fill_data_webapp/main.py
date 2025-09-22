@@ -1,4 +1,5 @@
-from faker import Faker
+import logging
+
 from fastapi import FastAPI
 import uvicorn
 
@@ -8,12 +9,12 @@ from config import settings
 
 
 app = FastAPI()
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
 
 
 @app.post("/generate")
 def generate_data(payload: models.Payload):
-    fake = Faker()
-
     conn = utils.get_db_conn(settings)
     cur = conn.cursor()
 
@@ -22,7 +23,7 @@ def generate_data(payload: models.Payload):
     insert_sql = utils.get_insert_query(payload.fields, payload.table_name)
 
     inserted_rows = utils.insert_generated_values(
-        payload.row_number, fake, payload.fields, insert_sql, cur, conn
+        payload.row_number, payload.fields, insert_sql, cur, conn
     )
 
     total_count = utils.get_row_count(payload.table_name, cur)
