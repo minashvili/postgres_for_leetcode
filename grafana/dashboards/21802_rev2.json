@@ -180,7 +180,7 @@
   "refresh": "5s",
   "schemaVersion": 37,
   "style": "dark",
-  "tags": [],
+  "tags": ["postgres", "db", "long_queries"],
   "templating": {
     "list": [
       {
