@@ -15,12 +15,15 @@ vim .env
 
 docker-compose up -d
 
-+---------------+----------------------------------------------+--------------------------------------+
-| Service       | URL / Host                                   | Comment                              |
-+---------------+----------------------------------------------+--------------------------------------+
-| Data Generator| http://localhost:8005/docs                   | Swagger UI for test data             |
-| Grafana       | http://localhost:3000/dashboards             | Dashboards, login/password from .env |
-| Prometheus    | http://localhost:9090/targets                | Monitoring targets                   |
-| Postgres      | localhost:5432                               | Connect with client (pgAdmin, psql)  |
-+---------------+----------------------------------------------+--------------------------------------+
+| Service           | URL / Host                                                           | Comment                              |
+| ----------------- | -------------------------------------------------------------------- | ------------------------------------ |
+| Data Generator    | [http://localhost:8005/docs](http://localhost:8005/docs)             | Swagger UI for test data             |
+| Grafana           | [http://localhost:3000/dashboards](http://localhost:3000/dashboards) | Dashboards, login/password from .env |
+| Prometheus        | [http://localhost:9090/targets](http://localhost:9090/targets)       | Monitoring targets                   |
+| Postgres          | localhost:5432                                                       | Connect with client (pgAdmin, psql)  |
+| PG Exporter       | [http://localhost:9153/metrics](http://localhost:9153/metrics)       | Postgres performance metrics         |
+| Postgres Exporter | [http://localhost:9187/metrics](http://localhost:9187/metrics)       | Postgres Prometheus metrics          |
+| Node Exporter     | [http://localhost:9100/metrics](http://localhost:9100/metrics)       | Node exporter metrics                |
+| Loki Ready        | [http://localhost:3100/ready](http://localhost:3100/ready)           | Loki readiness endpoint              |
+
 
