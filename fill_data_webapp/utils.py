@@ -37,6 +37,11 @@ def generate_value(field_type: str, fake: Faker):
     match field_type:
         case FieldType.string:
             return fake.word()
+        case FieldType.varchar:
+            return fake.word()
+        case FieldType.multistring:
+            word_count = random.randint(1, 30)
+            return ' '.join(fake.words(nb=word_count))
         case FieldType.int:
             return random.randint(0, 1000)
         case FieldType.email:
@@ -54,7 +59,6 @@ def create_table_if_not_exists(table: str, columns_def: str, conn, cur):
 
     create_table_sql = f"""
         CREATE TABLE IF NOT EXISTS {table} (
-            id SERIAL PRIMARY KEY,
             {columns_def}
         )
         """

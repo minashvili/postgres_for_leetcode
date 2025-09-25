@@ -6,6 +6,8 @@ from typing import List
 
 class FieldType(str, Enum):
     string = "string"
+    varchar = "varchar"
+    multistring = "multistring"
     int = "int"
     email = "email"
     date = "date"
