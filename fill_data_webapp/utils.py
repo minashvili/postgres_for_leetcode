@@ -13,7 +13,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def get_db_conn(settings: Settings):
-
     logger.info("Connecting to DB")
 
     try:
@@ -45,13 +44,17 @@ def generate_single_value(field_type: FieldType, fake: Faker):
             return round(random.uniform(), 2)
         case FieldType.multistring:
             word_count = random.randint(1, 30)
-            return  ' '.join(fake.words(nb=word_count))
+            return " ".join(fake.words(nb=word_count))
 
     return fake.word()
 
 
 def generate_values(fields: List[Field], fake: Faker, row_number: int):
-    unique_values = {f.name: set() for f in fields if "unique" in f.constraints or "primary" in f.constraints}
+    unique_values = {
+        f.name: set()
+        for f in fields
+        if "unique" in f.constraints or "primary" in f.constraints
+    }
     rows = []
 
     for _ in range(row_number):
