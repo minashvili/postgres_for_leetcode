@@ -33,21 +33,44 @@ def get_db_conn(settings: Settings):
     return connection
 
 
-def generate_value(field_type: str, fake: Faker):
+def generate_single_value(field_type: FieldType, fake: Faker):
     match field_type:
-        case FieldType.multistring:
-            word_count = random.randint(1, 30)
-            return ' '.join(fake.words(nb=word_count))
         case FieldType.int:
-            return random.randint(0, 1000)
+            return random.randint()
         case FieldType.email:
             return fake.email()
         case FieldType.date:
             return fake.date()
         case FieldType.float:
-            return random.random()
-        case _:
-            return fake.word()
+            return round(random.uniform(), 2)
+        case FieldType.multistring:
+            word_count = random.randint(1, 30)
+            return  ' '.join(fake.words(nb=word_count))
+
+    return fake.word()
+
+
+def generate_values(fields: List[Field], fake: Faker, row_number: int):
+    unique_values = {f.name: set() for f in fields if "unique" in f.constraints or "primary" in f.constraints}
+    rows = []
+
+    for _ in range(row_number):
+        row = []
+        for field in fields:
+            value = generate_single_value(field.type, fake)
+
+            if "not null" in field.constraints or "primary" in field.constraints:
+                while value is None:
+                    value = generate_single_value(field.type, fake)
+
+            if "unique" in field.constraints or "primary" in field.constraints:
+                while value in unique_values[field.name]:
+                    value = generate_single_value(field.type, fake)
+                unique_values[field.name].add(value)
+
+            row.append(value)
+        rows.append(row)
+    return rows
 
 
 def create_table_if_not_exists(table: str, columns_def: str, conn, cur):
@@ -136,14 +159,12 @@ def insert_generated_values(row_number: int, fields, insert_sql, cur, conn):
 
     fake = Faker()
 
-    generated = []
-    for _ in range(row_number):
-        values = [generate_value(f.type, fake) for f in fields]
-        cur.execute(insert_sql, values)
-        generated.append(values)
+    values = generate_values(fields, fake, row_number)
+    for row in values:
+        cur.execute(insert_sql, row)
 
     conn.commit()
 
-    logger.info(f"Inserted {len(generated)} rows")
+    logger.info(f"Inserted {len(values)} rows")
 
-    return generated
+    return values
