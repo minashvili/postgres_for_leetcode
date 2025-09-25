@@ -14,9 +14,16 @@ class FieldType(str, Enum):
     float = "float"
 
 
+class ConstraintType(str, Enum):
+    not_null = "not null"
+    unique = "unique"
+    primary = "primary"
+
+
 class Field(BaseModel):
     name: str
     type: FieldType
+    constraints: List[ConstraintType] = []
 
 
 class Payload(BaseModel):

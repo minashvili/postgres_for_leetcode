@@ -35,10 +35,6 @@ def get_db_conn(settings: Settings):
 
 def generate_value(field_type: str, fake: Faker):
     match field_type:
-        case FieldType.string:
-            return fake.word()
-        case FieldType.varchar:
-            return fake.word()
         case FieldType.multistring:
             word_count = random.randint(1, 30)
             return ' '.join(fake.words(nb=word_count))
@@ -83,6 +79,8 @@ def get_columns_definition(fields: List[Field]):
     logger.info("Generating columns definition")
 
     columns_sql = []
+    primary_keys = []
+
     for f in fields:
         match f.type:
             case FieldType.int:
@@ -93,8 +91,25 @@ def get_columns_definition(fields: List[Field]):
                 col_type = "REAL"
             case _:
                 col_type = "TEXT"
-        columns_sql.append(f"{f.name} {col_type}")
+
+        constraints = []
+        for constraint in f.constraints:
+            match constraint:
+                case "not null":
+                    constraints.append("NOT NULL")
+                case "unique":
+                    constraints.append("UNIQUE")
+                case "primary":
+                    primary_keys.append(f.name)
+                    constraints.append("NOT NULL")
+                case _:
+                    pass
+
+        col_def = f"{f.name} {col_type} {' '.join(constraints)}"
+        columns_sql.append(col_def)
+
     columns_def = ", ".join(columns_sql)
+    columns_def += f", PRIMARY KEY ({', '.join(primary_keys)})" if primary_keys else ""
 
     logger.info(f"Columns definition: {columns_def}")
 
