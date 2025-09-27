@@ -109,6 +109,16 @@ services:
     depends_on:
       - loki
 
+  pgbench:
+    image: postgres:17
+    container_name: pgbench
+    entrypoint: ["tail", "-f", "/dev/null"]
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+
+
 volumes:
   postgres_data:
   grafana_data:
