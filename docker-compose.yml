@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data:z
 
   web:
     build: fill_data_webapp
@@ -23,7 +23,7 @@ services:
     depends_on:
       - postgres
     volumes:
-      - ./fill_data_webapp:/app
+      - ./fill_data_webapp:/app:z
     command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
 
   postgres_exporter:
@@ -34,7 +34,7 @@ services:
       DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
       PG_EXPORTER_EXTEND_QUERY_PATH: "/queries/custom_queries.yaml"
     volumes:
-      - ./postgres_exporter/queries/custom_queries.yaml:/queries/custom_queries.yaml:ro
+      - ./postgres_exporter/queries/custom_queries.yaml:/queries/custom_queries.yaml:ro,z
     depends_on:
       - postgres
     ports:
@@ -67,7 +67,7 @@ services:
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,z
     ports:
       - "9090:9090"
     depends_on:
@@ -83,9 +83,9 @@ services:
       GF_SECURITY_ADMIN_USER: ${POSTGRES_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana:z
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro,z
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,z
     depends_on:
       - prometheus
 
@@ -96,15 +96,15 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
-      - ./loki/config.yaml:/etc/loki/loki-config.yaml:ro
-      - loki_data:/loki
+      - ./loki/config.yaml:/etc/loki/loki-config.yaml:ro,z
+      - loki_data:/loki:z
 
   promtail:
     image: grafana/promtail:2.9.0
     container_name: promtail
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./promtail/config.yaml:/etc/promtail/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:z
+      - ./promtail/config.yaml:/etc/promtail/config.yaml:ro,z
     command: -config.file=/etc/promtail/config.yaml
     depends_on:
       - loki
