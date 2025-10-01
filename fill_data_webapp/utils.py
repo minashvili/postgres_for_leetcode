@@ -5,8 +5,8 @@ import random
 from typing import List
 from faker import Faker
 
-from fill_data_webapp.config import Settings
-from fill_data_webapp.models import Field, FieldType
+from config import Settings
+from models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -158,7 +158,9 @@ def get_insert_query(fields: List[Field], table: str):
 
     col_names = [f.name for f in fields]
     col_placeholders = ", ".join(["%s"] * len(fields))
-    insert_sql = f"INSERT INTO {table} ({", ".join(col_names)}) VALUES ({col_placeholders})"
+    insert_sql = (
+        f"INSERT INTO {table} ({', '.join(col_names)}) VALUES ({col_placeholders})"
+    )
 
     logger.info(f"Insert SQL: {insert_sql}")
 
