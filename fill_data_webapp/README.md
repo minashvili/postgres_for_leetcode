@@ -7,3 +7,9 @@ ruff check . --fix
 ``` bash
 ruff format .
 ```
+
+## Run unit tests and check test coverage
+``` bash
+python -m coverage run -m pytest
+python -m coverage report -m 
+```

@@ -5,8 +5,8 @@ import random
 from typing import List
 from faker import Faker
 
-from config import Settings
-from models import Field, FieldType
+from fill_data_webapp.config import Settings
+from fill_data_webapp.models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -35,21 +35,24 @@ def get_db_conn(settings: Settings):
 def generate_single_value(field_type: FieldType, fake: Faker):
     match field_type:
         case FieldType.int:
-            return random.randint()
+            return random.randint(1, 1_000_000_000)
         case FieldType.email:
             return fake.email()
         case FieldType.date:
             return fake.date()
         case FieldType.float:
-            return round(random.uniform(), 2)
+            return round(random.uniform(1, 1_000_000_000), 2)
         case FieldType.multistring:
-            word_count = random.randint(1, 30)
+            word_count = random.randint(2, 30)
             return " ".join(fake.words(nb=word_count))
 
     return fake.word()
 
 
 def generate_values(fields: List[Field], fake: Faker, row_number: int):
+    if len(fields) == 0:
+        raise ValueError("No fields provided for value generation")
+
     unique_values = {
         f.name: set()
         for f in fields
@@ -93,16 +96,23 @@ def create_table_if_not_exists(table: str, columns_def: str, conn, cur):
 
 def get_row_count(table, cur):
     logger.info(f"Getting row count for table {table}")
-    cur.execute(f"SELECT COUNT(*) FROM {table}")
-    total_count = cur.fetchone()[0]
+    try:
+        cur.execute(f"SELECT COUNT(*) FROM {table}")
+        total_count = cur.fetchone()[0]
 
-    logger.info(f"Total rows in table {table}: {total_count}")
+        logger.info(f"Total rows in table {table}: {total_count}")
 
-    return total_count
+        return total_count
+    except Exception as e:
+        logger.error(f"Error getting row count for table {table}: {e}")
+        raise e
 
 
-def get_columns_definition(fields: List[Field]):
+def get_columns_definition(fields: List[Field]) -> str:
     logger.info("Generating columns definition")
+
+    if len(fields) == 0:
+        raise ValueError("No fields provided for columns definition generation")
 
     columns_sql = []
     primary_keys = []
@@ -128,8 +138,6 @@ def get_columns_definition(fields: List[Field]):
                 case "primary":
                     primary_keys.append(f.name)
                     constraints.append("NOT NULL")
-                case _:
-                    pass
 
         col_def = f"{f.name} {col_type} {' '.join(constraints)}"
         columns_sql.append(col_def)
@@ -145,29 +153,34 @@ def get_columns_definition(fields: List[Field]):
 def get_insert_query(fields: List[Field], table: str):
     logger.info("Generating insert query")
 
+    if len(fields) == 0:
+        raise ValueError("No fields provided for insert query generation")
+
     col_names = [f.name for f in fields]
     col_placeholders = ", ".join(["%s"] * len(fields))
-    insert_sql = f"""
-        INSERT INTO {table} ({", ".join(col_names)})
-        VALUES ({col_placeholders})
-        """
+    insert_sql = f"INSERT INTO {table} ({", ".join(col_names)}) VALUES ({col_placeholders})"
 
     logger.info(f"Insert SQL: {insert_sql}")
 
     return insert_sql
 
 
-def insert_generated_values(row_number: int, fields, insert_sql, cur, conn):
+def insert_generated_values(row_number: int, fields, insert_sql, cur, conn) -> List:
     logger.info("Generating and inserting values")
 
     fake = Faker()
 
     values = generate_values(fields, fake, row_number)
-    for row in values:
-        cur.execute(insert_sql, row)
 
-    conn.commit()
+    try:
+        for row in values:
+            cur.execute(insert_sql, row)
 
-    logger.info(f"Inserted {len(values)} rows")
+        conn.commit()
+
+        logger.info(f"Inserted {len(values)} rows")
+    except Exception as e:
+        logger.error(f"Error inserting row {row}: {e}")
+        raise e
 
     return values
