@@ -5,13 +5,20 @@ from typing import List
 
 
 class FieldType(str, Enum):
-    string = "string"
-    varchar = "varchar"
+    text = "text"
     multistring = "multistring"
-    int = "int"
+    integer = "integer"
     email = "email"
     date = "date"
     float = "float"
+
+    @classmethod
+    def _missing_(cls, value):
+        if value in {"string", "varchar", "text"}:
+            return cls.text
+        if value in {"int", "integer"}:
+            return cls.integer
+        return super()._missing_(value)
 
 
 class ConstraintType(str, Enum):
@@ -30,3 +37,4 @@ class Payload(BaseModel):
     table_name: str
     row_number: int = 10
     fields: List[Field]
+    force_recreate_table: bool = False

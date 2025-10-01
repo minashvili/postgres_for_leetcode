@@ -34,7 +34,7 @@ def get_db_conn(settings: Settings):
 
 def generate_single_value(field_type: FieldType, fake: Faker):
     match field_type:
-        case FieldType.int:
+        case FieldType.integer:
             return random.randint(1, 1_000_000_000)
         case FieldType.email:
             return fake.email()
@@ -94,6 +94,53 @@ def create_table_if_not_exists(table: str, columns_def: str, conn, cur):
     logger.info(f"Table {table} is created or already exists")
 
 
+def get_existing_columns_in_db(table: str, cur) -> List[Field]:
+    logger.info(f"Getting existing columns in DB for table {table}")
+    try:
+        cur.execute(
+            f"""
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = '{table}'
+            """
+        )
+        columns = []
+        for row in cur.fetchall():
+            columns.append(Field(name=row[0], type=FieldType(row[1])))
+
+        return columns
+    except Exception as e:
+        logger.error(f"Error getting existing columns for table {table}: {e}")
+        raise e
+
+
+def columns_match(existing: List[Field], new: List[Field]) -> bool:
+    if len(existing) != len(new):
+        return False
+
+    sorted_existing_list = sorted(existing, key=lambda x: x.name)
+    sorted_new_list = sorted(new, key=lambda x: x.name)
+
+    for existing, incoming in zip(sorted_existing_list, sorted_new_list):
+        if existing.name != incoming.name or existing.type != incoming.type:
+            return False
+
+    return True
+
+
+def drop_table_if_exists(table: str, conn, cur):
+    logger.info(f"Dropping table {table}")
+
+    try:
+        cur.execute(f"DROP TABLE IF EXISTS {table}")
+        conn.commit()
+
+        logger.info(f"Table {table} dropped if it existed")
+    except Exception as e:
+        logger.error(f"Error dropping table {table}: {e}")
+        raise e
+
+
 def get_row_count(table, cur):
     logger.info(f"Getting row count for table {table}")
     try:
@@ -119,7 +166,7 @@ def get_columns_definition(fields: List[Field]) -> str:
 
     for f in fields:
         match f.type:
-            case FieldType.int:
+            case FieldType.integer:
                 col_type = "INTEGER"
             case FieldType.date:
                 col_type = "DATE"

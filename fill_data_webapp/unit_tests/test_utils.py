@@ -57,7 +57,7 @@ def test_get_db_conn_failure(mocker):
 def test_generate_single_value_int(faker):
     from fill_data_webapp.utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.int, faker)
+    result_value = generate_single_value(FieldType.integer, faker)
     assert type(result_value) is int
 
 
@@ -105,7 +105,7 @@ def test_generate_values_success(faker):
     from fill_data_webapp.models import Field
 
     fields = [
-        Field(name="id", type=FieldType.int, constraints=["primary"]),
+        Field(name="id", type=FieldType.integer, constraints=["primary"]),
         Field(name="email", type=FieldType.email),
         Field(name="created_at", type=FieldType.date),
         Field(name="score", type=FieldType.float),
@@ -220,7 +220,7 @@ def test_generate_get_columns_definition_success():
     from fill_data_webapp.models import Field
 
     fields = [
-        Field(name="id", type=FieldType.int, constraints=["primary"]),
+        Field(name="id", type="int", constraints=["primary"]),
         Field(name="email", type=FieldType.email),
         Field(name="created_at", type=FieldType.date),
         Field(name="score", type=FieldType.float),
@@ -262,7 +262,7 @@ def test_get_insert_query_success_one_field():
     from fill_data_webapp.utils import get_insert_query
     from fill_data_webapp.models import Field
 
-    fields = [Field(name="id", type=FieldType.int)]
+    fields = [Field(name="id", type=FieldType.integer)]
     table_name = "test_table"
     expected_query = "INSERT INTO test_table (id) VALUES (%s)"
 
@@ -275,7 +275,7 @@ def test_get_insert_query_success_many_fields():
     from fill_data_webapp.models import Field
 
     fields = [
-        Field(name="id", type=FieldType.int),
+        Field(name="id", type=FieldType.integer),
         Field(name="email", type=FieldType.email),
         Field(name="created_at", type=FieldType.date),
         Field(name="score", type=FieldType.float),
@@ -308,7 +308,7 @@ def test_insert_generated_values_success():
     mock_cursor.execute.return_value = None
 
     fields = [
-        Field(name="id", type=FieldType.int, constraints=["primary"]),
+        Field(name="id", type=FieldType.integer, constraints=["primary"]),
         Field(name="email", type=FieldType.email),
     ]
     insert_sql = "INSERT INTO test_table (id, email) VALUES (%s, %s)"
@@ -338,7 +338,7 @@ def test_insert_generated_values_failure_on_execute():
     mock_cursor.execute.side_effect = Exception("Mocked error")
 
     fields = [
-        Field(name="id", type=FieldType.int, constraints=["primary"]),
+        Field(name="id", type=FieldType.integer, constraints=["primary"]),
         Field(name="email", type=FieldType.email),
     ]
     insert_sql = "INSERT INTO test_table (id, email) VALUES (%s, %s)"
@@ -346,4 +346,120 @@ def test_insert_generated_values_failure_on_execute():
 
     with pytest.raises(Exception) as excinfo:
         insert_generated_values(row_number, fields, insert_sql, mock_cursor, mock_conn)
+    assert "Mocked error" in str(excinfo.value)
+
+
+def test_get_existing_columns_in_db_success():
+    from fill_data_webapp.utils import get_existing_columns_in_db
+    from fill_data_webapp.models import FieldType
+
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = (("test_field", "text"), )
+
+    result_value = get_existing_columns_in_db("test_table", mock_cursor)
+    mock_cursor.execute.assert_called_once()
+    assert len(result_value) == 1
+    assert result_value[0].name == "test_field"
+    assert result_value[0].type == FieldType.text
+
+
+def test_get_existing_columns_in_db_error():
+    from fill_data_webapp.utils import get_existing_columns_in_db
+
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.side_effect = Exception("Mocked error")
+
+    with pytest.raises(Exception) as excinfo:
+        get_existing_columns_in_db("test_table", mock_cursor)
+    assert "Mocked error" in str(excinfo.value)
+
+
+def test_columns_match_success():
+    from fill_data_webapp.utils import columns_match
+    from fill_data_webapp.models import Field, FieldType
+
+    existing = [
+        Field(name="username", type=FieldType.text, constraints=["unique"]),
+        Field(name="score", type=FieldType.float)
+    ]
+    new = [
+        Field(name="username", type="varchar"),
+        Field(name="score", type=FieldType.float)
+    ]
+
+    result_value = columns_match(existing, new)
+    assert result_value
+
+
+def test_columns_match_wrong_len():
+    from fill_data_webapp.utils import columns_match
+    from fill_data_webapp.models import Field, FieldType
+
+    existing = [
+        Field(name="username", type=FieldType.text, constraints=["unique"])
+    ]
+    new = [
+        Field(name="username", type="varchar"),
+        Field(name="score", type=FieldType.float)
+    ]
+
+    result_value = columns_match(existing, new)
+    assert not result_value
+
+
+def test_columns_match_wrong_type():
+    from fill_data_webapp.utils import columns_match
+    from fill_data_webapp.models import Field, FieldType
+
+    existing = [
+        Field(name="username", type=FieldType.text, constraints=["unique"]),
+        Field(name="score", type=FieldType.integer)
+    ]
+    new = [
+        Field(name="username", type="varchar"),
+        Field(name="score", type=FieldType.float)
+    ]
+
+    result_value = columns_match(existing, new)
+    assert not result_value
+
+
+def test_columns_match_wrong_names():
+    from fill_data_webapp.utils import columns_match
+    from fill_data_webapp.models import Field, FieldType
+
+    existing = [
+        Field(name="username", type=FieldType.text, constraints=["unique"]),
+        Field(name="score_score", type=FieldType.float)
+    ]
+    new = [
+        Field(name="username", type="varchar"),
+        Field(name="score", type=FieldType.float)
+    ]
+
+    result_value = columns_match(existing, new)
+    assert not result_value
+
+
+def test_drop_table_if_exists_success():
+    from fill_data_webapp.utils import drop_table_if_exists
+
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.execute.return_value = None
+
+    drop_table_if_exists("test_table", mock_conn, mock_cursor)
+    mock_cursor.execute.assert_called_once()
+    assert mock_conn.commit.called
+
+
+def test_drop_table_if_exists_error():
+    from fill_data_webapp.utils import drop_table_if_exists
+
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.execute.side_effect = Exception("Mocked error")
+
+    with pytest.raises(Exception) as excinfo:
+        drop_table_if_exists("test_table", mock_conn, mock_cursor)
     assert "Mocked error" in str(excinfo.value)
