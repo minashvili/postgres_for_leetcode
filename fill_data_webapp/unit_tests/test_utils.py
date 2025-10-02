@@ -295,7 +295,7 @@ def test_get_insert_query_success_many_fields():
 def test_get_insert_query_error_empty_list():
     from fill_data_webapp.utils import get_insert_query
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         get_insert_query([], "test_table")
 
 
@@ -354,7 +354,7 @@ def test_get_existing_columns_in_db_success():
     from fill_data_webapp.models import FieldType
 
     mock_cursor = MagicMock()
-    mock_cursor.fetchall.return_value = (("test_field", "text"), )
+    mock_cursor.fetchall.return_value = (("test_field", "text"),)
 
     result_value = get_existing_columns_in_db("test_table", mock_cursor)
     mock_cursor.execute.assert_called_once()
@@ -380,11 +380,11 @@ def test_columns_match_success():
 
     existing = [
         Field(name="username", type=FieldType.text, constraints=["unique"]),
-        Field(name="score", type=FieldType.float)
+        Field(name="score", type=FieldType.float),
     ]
     new = [
         Field(name="username", type="varchar"),
-        Field(name="score", type=FieldType.float)
+        Field(name="score", type=FieldType.float),
     ]
 
     result_value = columns_match(existing, new)
@@ -395,12 +395,10 @@ def test_columns_match_wrong_len():
     from fill_data_webapp.utils import columns_match
     from fill_data_webapp.models import Field, FieldType
 
-    existing = [
-        Field(name="username", type=FieldType.text, constraints=["unique"])
-    ]
+    existing = [Field(name="username", type=FieldType.text, constraints=["unique"])]
     new = [
         Field(name="username", type="varchar"),
-        Field(name="score", type=FieldType.float)
+        Field(name="score", type=FieldType.float),
     ]
 
     result_value = columns_match(existing, new)
@@ -413,11 +411,11 @@ def test_columns_match_wrong_type():
 
     existing = [
         Field(name="username", type=FieldType.text, constraints=["unique"]),
-        Field(name="score", type=FieldType.integer)
+        Field(name="score", type=FieldType.integer),
     ]
     new = [
         Field(name="username", type="varchar"),
-        Field(name="score", type=FieldType.float)
+        Field(name="score", type=FieldType.float),
     ]
 
     result_value = columns_match(existing, new)
@@ -430,11 +428,11 @@ def test_columns_match_wrong_names():
 
     existing = [
         Field(name="username", type=FieldType.text, constraints=["unique"]),
-        Field(name="score_score", type=FieldType.float)
+        Field(name="score_score", type=FieldType.float),
     ]
     new = [
         Field(name="username", type="varchar"),
-        Field(name="score", type=FieldType.float)
+        Field(name="score", type=FieldType.float),
     ]
 
     result_value = columns_match(existing, new)

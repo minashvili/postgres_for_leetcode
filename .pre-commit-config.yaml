@@ -1,0 +1,41 @@
+repos:
+ - repo: https://github.com/codespell-project/codespell
+   rev: v2.3.0
+   hooks:
+     - id: codespell
+       name: Spell Checker (backend and frontend)
+       files: ^fill_data_webapp/
+       stages: [pre-commit]
+ - repo: https://github.com/astral-sh/ruff-pre-commit
+   rev: v0.7.0
+   hooks:
+     - id: ruff
+       name: Ruff Linter (Fill Data WebApp)
+       args: ["--fix"]
+       files: ^fill_data_webapp/
+       stages: [pre-commit]
+     - id: ruff-format
+       name: Ruff Formatter (Fill Data WebApp)
+       files: ^fill_data_webapp/
+       stages: [pre-commit]
+ - repo: https://github.com/pre-commit/mirrors-mypy
+   rev: v1.18.2
+   hooks:
+     - id: mypy
+       name: Mypy Type Checker (Fill Data WebApp)
+       args: ["--explicit-package-bases", "--ignore-missing-imports"]
+       additional_dependencies:
+         [
+           pydantic==2.11.9,
+           types-psycopg2==2.9
+         ]
+       files: ^fill_data_webapp/
+       stages: [pre-commit]
+ - repo: local
+   hooks:
+    - id: run-tests-and-check-coverage
+      name: Run unit tests and check coverage
+      entry: bash -c 'python -m coverage run -m pytest && python -m coverage report --fail-under=95'
+      language: system
+      pass_filenames: false
+      stages: [pre-commit, pre-push]

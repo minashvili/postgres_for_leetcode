@@ -5,8 +5,8 @@ import random
 from typing import List
 from faker import Faker
 
-from config import Settings
-from models import Field, FieldType
+from fill_data_webapp.config import Settings
+from fill_data_webapp.models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -53,7 +53,7 @@ def generate_values(fields: List[Field], fake: Faker, row_number: int):
     if len(fields) == 0:
         raise ValueError("No fields provided for value generation")
 
-    unique_values = {
+    unique_values: dict = {
         f.name: set()
         for f in fields
         if "unique" in f.constraints or "primary" in f.constraints
@@ -121,8 +121,11 @@ def columns_match(existing: List[Field], new: List[Field]) -> bool:
     sorted_existing_list = sorted(existing, key=lambda x: x.name)
     sorted_new_list = sorted(new, key=lambda x: x.name)
 
-    for existing, incoming in zip(sorted_existing_list, sorted_new_list):
-        if existing.name != incoming.name or existing.type != incoming.type:
+    for existing_field, incoming_field in zip(sorted_existing_list, sorted_new_list):
+        if (
+            existing_field.name != incoming_field.name
+            or existing_field.type != incoming_field.type
+        ):
             return False
 
     return True

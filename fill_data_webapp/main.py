@@ -3,9 +3,9 @@ import logging
 from fastapi import FastAPI, HTTPException
 import uvicorn
 
-import models
-import utils
-from config import settings
+import fill_data_webapp.models as models
+import fill_data_webapp.utils as utils
+from fill_data_webapp.config import settings
 
 
 app = FastAPI()
