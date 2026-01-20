@@ -2,9 +2,15 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 import uvicorn
+from sqlalchemy import MetaData
+from sqlalchemy.orm import Session
 
-import fill_data_webapp.models as models
-import fill_data_webapp.utils as utils
+from fill_data_webapp import (
+    models,
+    utils,
+    data_structure_utils,
+    data_content_utils,
+)
 from fill_data_webapp.config import settings
 
 
@@ -12,39 +18,38 @@ app = FastAPI()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
+engine = utils.get_db_engine(settings)
+db_metadata = MetaData()
+db_metadata.reflect(engine)
+
 
 @app.post("/generate")
 def generate_data(payload: models.Payload):
-    conn = utils.get_db_conn(settings)
-    cur = conn.cursor()
+    existing_table = data_structure_utils.get_existing_table(
+        payload.table_name, db_metadata
+    )
 
-    existing_columns = utils.get_existing_columns_in_db(payload.table_name, cur)
-
-    if not utils.columns_match(existing_columns, payload.fields):
+    if existing_table is not None:
         if payload.force_recreate_table:
-            utils.drop_table_if_exists(payload.table_name, conn, cur)
+            data_structure_utils.drop_table(existing_table, db_metadata, engine)
         else:
             raise HTTPException(
                 500,
-                "Table already exists with different schema. Use force_recreate_table to drop and recreate.",
+                "Table already exists. Use force_recreate_table to drop and recreate.",
             )
 
-    columns_def = utils.get_columns_definition(payload.fields)
-    utils.create_table_if_not_exists(payload.table_name, columns_def, conn, cur)
-    insert_sql = utils.get_insert_query(payload.fields, payload.table_name)
-
-    inserted_rows = utils.insert_generated_values(
-        payload.row_number, payload.fields, insert_sql, cur, conn
+    sqlalchemy_columns = data_structure_utils.get_columns_definition(payload.fields)
+    table = data_structure_utils.create_table(
+        payload.table_name, sqlalchemy_columns, engine, db_metadata
     )
-
-    total_count = utils.get_row_count(payload.table_name, cur)
-
-    cur.close()
-    conn.close()
+    with Session(engine) as session:
+        data_content_utils.insert_generated_values(
+            table, payload.row_number, payload.fields, session
+        )
+    total_count = data_content_utils.get_row_count(table, engine)
 
     return {
-        "inserted": len(inserted_rows),
-        "total_in_table": total_count,
+        "inserted_rows": len(total_count),
     }
 
 

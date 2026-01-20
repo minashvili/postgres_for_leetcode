@@ -10,3 +10,4 @@ coverage==7.10.7
 pre-commit==4.3.0
 mypy==1.18.2
 types-psycopg2==2.9
+sqlalchemy==2.0.45
