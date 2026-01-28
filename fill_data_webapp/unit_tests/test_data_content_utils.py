@@ -1,57 +1,57 @@
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
 
-
 from fill_data_webapp.models import FieldType
 
 
-def test_generate_single_value_int(faker):
+def test_generate_single_value_int(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.integer, faker)
+    result_value = generate_single_value(FieldType.integer, faker, get_settings)
     assert type(result_value) is int
 
 
-def test_generate_single_value_email(faker):
+def test_generate_single_value_email(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.email, faker)
+    result_value = generate_single_value(FieldType.email, faker, get_settings)
     assert type(result_value) is str
     assert "@" in result_value
     assert "." in result_value
 
 
-def test_generate_single_value_date(faker):
+def test_generate_single_value_date(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.date, faker)
+    result_value = generate_single_value(FieldType.date, faker, get_settings)
     assert type(result_value) is str
     assert len(result_value.split("-")) == 3
 
 
-def test_generate_single_value_float(faker):
+def test_generate_single_value_float(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.float, faker)
+    result_value = generate_single_value(FieldType.float, faker, get_settings)
     assert type(result_value) is float
 
 
-def test_generate_single_value_multistring(faker):
+def test_generate_single_value_multistring(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.text, faker)
+    result_value = generate_single_value(FieldType.text, faker, get_settings)
     assert type(result_value) is str
 
 
-def test_generate_single_value_random_type(faker):
+def test_generate_single_value_random_type(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_single_value
 
-    result_value = generate_single_value("test", faker)
+    result_value = generate_single_value("test", faker, get_settings)
     assert type(result_value) is str
 
 
-def test_generate_values_success(faker):
+def test_generate_values_success(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_values
     from fill_data_webapp.models import Field
 
@@ -65,13 +65,11 @@ def test_generate_values_success(faker):
     ]
     row_number = 10
 
-    result_rows = generate_values(fields, faker, row_number)
+    result_rows = generate_values(fields, faker, row_number, get_settings)
     assert len(result_rows) == row_number
     for row in result_rows:
-        assert len(row) == len(fields)
+        assert len(row) == len(fields) - 1  # identity does not return
 
-    assert len(set(r["id"] for r in result_rows)) == row_number  # unique primary key
-    assert type(result_rows[0]["id"]) is int
     assert type(result_rows[0]["email"]) is str and "@" in result_rows[0]["email"]
     assert (
         type(result_rows[0]["created_at"]) is str
@@ -85,61 +83,105 @@ def test_generate_values_success(faker):
     assert type(result_rows[0]["username"]) is str
 
 
-def test_generate_values_unique_constraint():
+def test_generate_values_unique_constraint_str(get_settings):
     from fill_data_webapp.data_content_utils import generate_values
     from fill_data_webapp.models import Field
 
     mocked_faker = MagicMock()
-    mocked_faker.word.side_effect = [
-        "unique_value_1",
-        "unique_value_1",
-        "unique_value_2",
-    ]
 
     fields = [Field(name="username", type="string", unique=True, nullable=False)]
     row_number = 2
 
-    result_rows = generate_values(fields, mocked_faker, row_number)
+    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
     assert result_rows == [
-        {"username": "unique_value_1"},
-        {"username": "unique_value_2"},
+        {"username": "dummy_value_1"},
+        {"username": "dummy_value_2"},
     ]
-    assert (
-        mocked_faker.word.call_count == 3
-    )  # Called extra time due to uniqueness retry
+    assert mocked_faker.word.call_count == 0  # Faker is not executed for unique fields
 
 
-def test_generate_values_nullable(faker):
+def test_generate_values_unique_constraint_date_int(get_settings):
+    from fill_data_webapp.data_content_utils import generate_values
+    from fill_data_webapp.models import Field
+
+    mocked_faker = MagicMock()
+
+    fields = [Field(name="counter", type="integer", unique=True, nullable=False)]
+    row_number = 2
+
+    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    assert result_rows == [
+        {"counter": 1},
+        {"counter": 2},
+    ]
+    assert mocked_faker.word.call_count == 0  # Faker is not executed for unique fields
+
+
+def test_generate_values_unique_constraint_date_email(get_settings):
+    from fill_data_webapp.data_content_utils import generate_values
+    from fill_data_webapp.models import Field
+
+    mocked_faker = MagicMock()
+
+    fields = [Field(name="email", type="email", unique=True, nullable=False)]
+    row_number = 2
+
+    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    assert result_rows == [
+        {"email": "dummy_email_1@dummy.dummy"},
+        {"email": "dummy_email_2@dummy.dummy"},
+    ]
+    assert mocked_faker.word.call_count == 0  # Faker is not executed for unique fields
+
+
+def test_generate_values_unique_constraint_date(get_settings):
+    from fill_data_webapp.data_content_utils import generate_values
+    from fill_data_webapp.models import Field
+
+    mocked_faker = MagicMock()
+
+    fields = [Field(name="start_date", type="date", unique=True, nullable=False)]
+    row_number = 2
+
+    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    assert result_rows == [
+        {"start_date": datetime(2000, 1, 2)},
+        {"start_date": datetime(2000, 1, 3)},
+    ]
+    assert mocked_faker.word.call_count == 0  # Faker is not executed for unique fields
+
+
+def test_generate_values_nullable(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_values
     from fill_data_webapp.models import Field
 
     fields = [Field(name="username", type="string", nullable=True)]
     row_number = 10_000
 
-    result_rows = generate_values(fields, faker, row_number)
+    result_rows = generate_values(fields, faker, row_number, get_settings)
     assert len(result_rows) == row_number
     values = [value["username"] for value in result_rows]
     assert None in values
 
 
-def test_generate_values_not_nullable(faker):
+def test_generate_values_not_nullable(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_values
     from fill_data_webapp.models import Field
 
     fields = [Field(name="username", type="string", nullable=False)]
     row_number = 10_000
 
-    result_rows = generate_values(fields, faker, row_number)
+    result_rows = generate_values(fields, faker, row_number, get_settings)
     assert len(result_rows) == row_number
     values = [value["username"] for value in result_rows]
     assert None not in values
 
 
-def test_generate_values_empty_list(faker):
+def test_generate_values_empty_list(faker, get_settings):
     from fill_data_webapp.data_content_utils import generate_values
 
     with pytest.raises(ValueError) as excinfo:
-        generate_values([], faker, 10)
+        generate_values([], faker, 10, get_settings)
     assert "No fields provided for value generation" in str(excinfo.value)
 
 
@@ -159,7 +201,9 @@ def test_get_row_count_failure(mock_table, mock_engine_exception):
     assert "Mocked error" in str(excinfo.value)
 
 
-def test_insert_generated_values_success(mock_table, mock_session_success):
+def test_insert_generated_values_success(
+    mock_table, mock_session_success, get_settings
+):
     from fill_data_webapp.data_content_utils import insert_generated_values
     from fill_data_webapp.models import Field, FieldType
 
@@ -171,20 +215,20 @@ def test_insert_generated_values_success(mock_table, mock_session_success):
     ]
 
     result_rows = insert_generated_values(
-        mock_table, row_number, fields, mock_session_success
+        mock_table, row_number, fields, mock_session_success, get_settings
     )
 
     mock_session_success.commit.assert_called_once()
     assert len(result_rows) == row_number
     for row in result_rows:
-        assert len(row) == len(fields)
+        assert len(row) == len(fields) - 1  # identity does not return
 
-    assert len(set(r["id"] for r in result_rows)) == row_number
-    assert type(result_rows[0]["id"]) is int
     assert type(result_rows[0]["email"]) is str and "@" in result_rows[0]["email"]
 
 
-def test_insert_generated_values_failure_on_execute(mock_table, mock_session_exception):
+def test_insert_generated_values_failure_on_execute(
+    mock_table, mock_session_exception, get_settings
+):
     from fill_data_webapp.data_content_utils import insert_generated_values
     from fill_data_webapp.models import Field, FieldType
 
@@ -196,5 +240,7 @@ def test_insert_generated_values_failure_on_execute(mock_table, mock_session_exc
     ]
 
     with pytest.raises(Exception) as excinfo:
-        insert_generated_values(mock_table, row_number, fields, mock_session_exception)
+        insert_generated_values(
+            mock_table, row_number, fields, mock_session_exception, get_settings
+        )
     assert "Mocked error" in str(excinfo.value)

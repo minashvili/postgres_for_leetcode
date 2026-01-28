@@ -1,7 +1,11 @@
+import re
 from enum import Enum
 
-from pydantic import BaseModel
-from typing import List, Any
+from pydantic import BaseModel, model_validator, field_validator
+from typing import List
+
+
+IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,62}$")
 
 
 class FieldType(str, Enum):
@@ -24,13 +28,28 @@ class FieldType(str, Enum):
 class Field(BaseModel):
     name: str
     type: FieldType
-    nullable: bool = True
+    nullable: bool = False
     unique: bool = False
     primary_key: bool = False
 
-    def model_post_init(self, context: Any, /) -> None:
-        self.nullable = self.nullable and not self.primary_key
-        self.unique = self.unique or self.primary_key
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        return _validate_identifier(v, "field.name")
+
+    @model_validator(mode="after")
+    def validate_constraints(self):
+        if self.unique and self.nullable:
+            raise ValueError(
+                "nullable=True is not allowed when unique=True (enforce NOT NULL for UNIQUE)."
+            )
+
+        if self.primary_key and self.nullable:
+            raise ValueError(
+                "primary_key=True is not allowed when nullable=True (PRIMARY KEY implies NOT NULL)."
+            )
+
+        return self
 
 
 class Payload(BaseModel):
@@ -38,3 +57,30 @@ class Payload(BaseModel):
     row_number: int = 10
     fields: List[Field]
     force_recreate_table: bool = False
+
+    @field_validator("table_name")
+    @classmethod
+    def validate_table_name(cls, v: str) -> str:
+        return _validate_identifier(v, "table_name")
+
+    @model_validator(mode="after")
+    def validate_fields(self):
+        names = [f.name for f in self.fields]
+        if len(names) != len(set(names)):
+            raise ValueError("fields[].name must be unique within the request.")
+
+        pk_count = sum(1 for f in self.fields if f.primary_key)
+        if pk_count > 1:
+            raise ValueError("Only one primary_key field is supported in this version.")
+
+        return self
+
+
+def _validate_identifier(value: str, what: str) -> str:
+    v = value.strip()
+    if not IDENT_RE.fullmatch(v):
+        raise ValueError(
+            f"{what} must match regex {IDENT_RE.pattern} and be <= 63 chars "
+            "(letters/digits/underscore; must not start with a digit)."
+        )
+    return v

@@ -38,18 +38,20 @@ def generate_data(payload: models.Payload):
                 "Table already exists. Use force_recreate_table to drop and recreate.",
             )
 
-    sqlalchemy_columns = data_structure_utils.get_columns_definition(payload.fields)
+    sqlalchemy_columns = data_structure_utils.get_columns_definition(
+        payload.fields, settings
+    )
     table = data_structure_utils.create_table(
         payload.table_name, sqlalchemy_columns, engine, db_metadata
     )
     with Session(engine) as session:
         data_content_utils.insert_generated_values(
-            table, payload.row_number, payload.fields, session
+            table, payload.row_number, payload.fields, session, settings
         )
     total_count = data_content_utils.get_row_count(table, engine)
 
     return {
-        "inserted_rows": len(total_count),
+        "inserted_rows": total_count,
     }
 
 

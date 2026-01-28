@@ -12,10 +12,12 @@ from sqlalchemy import (
     Date,
     Boolean,
     Text,
+    Identity,
 )
 from sqlalchemy.sql.type_api import TypeEngine
 
-from fill_data_webapp.models import Field
+from fill_data_webapp.config import Settings
+from fill_data_webapp.models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -26,7 +28,7 @@ def get_existing_table(table_name: str, db_metadata: MetaData) -> Table:
     return db_metadata.tables.get(table_name)
 
 
-def get_columns_definition(fields: List[Field]) -> list[Column]:
+def get_columns_definition(fields: List[Field], settings: Settings) -> list[Column]:
     logger.info("Generating columns definition")
 
     if len(fields) == 0:
@@ -34,8 +36,8 @@ def get_columns_definition(fields: List[Field]) -> list[Column]:
 
     type_mapping = {
         "integer": Integer,
-        "email": String,
-        "string": String,
+        "email": String(settings.string_length),
+        "string": String(settings.string_length),
         "float": Float,
         "date": Date,
         "boolean": Boolean,
@@ -45,15 +47,18 @@ def get_columns_definition(fields: List[Field]) -> list[Column]:
 
     for f in fields:
         col_type: TypeEngine = type_mapping.get(f.type.lower())
-        sqlalchemy_columns.append(
-            Column(
-                f.name,
-                col_type,
-                primary_key=f.primary_key,
-                nullable=f.nullable,
-                unique=f.unique,
-            )
-        )
+
+        field_params = {"name": f.name, "type_": col_type}
+        if f.type == FieldType.integer and f.primary_key:
+            field_params["autoincrement"] = Identity()
+
+        if f.primary_key:
+            field_params["primary_key"] = f.primary_key
+        if f.nullable:
+            field_params["nullable"] = f.nullable
+        if f.unique:
+            field_params["unique"] = f.unique
+        sqlalchemy_columns.append(Column(**field_params))
 
     logger.info("Columns definition: {}".format(sqlalchemy_columns))
 

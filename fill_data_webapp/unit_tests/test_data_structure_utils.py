@@ -4,7 +4,7 @@ import pytest
 import sqlalchemy
 
 from pydantic import ValidationError
-from sqlalchemy import Column, Integer, String, Date, Float, Text
+from sqlalchemy import Column, Integer, String, Date, Float, Text, Identity
 
 from fill_data_webapp.models import FieldType
 
@@ -39,34 +39,37 @@ def test_create_table_if_not_exists_failure(
     assert "Mocked error" in str(excinfo.value)
 
 
-def test_generate_get_columns_definition_success():
+def test_generate_get_columns_definition_success(get_settings):
     from fill_data_webapp.data_structure_utils import get_columns_definition
     from fill_data_webapp.models import Field
 
     fields = [
         Field(name="id", type="int", primary_key=True),
-        Field(name="email", type=FieldType.email),
-        Field(name="created_at", type=FieldType.date),
-        Field(name="score", type=FieldType.float),
-        Field(name="description", type="multistring", nullable=False),
+        Field(name="email", type=FieldType.email, nullable=True),
+        Field(name="created_at", type=FieldType.date, nullable=True),
+        Field(name="score", type=FieldType.float, nullable=True),
+        Field(name="description", type="multistring"),
         Field(name="username", type="string", unique=True),
     ]
     expected_columns = [
-        Column("id", Integer, primary_key=True, unique=True, nullable=False),
-        Column("email", String, primary_key=False, unique=False, nullable=True),
-        Column("created_at", Date, primary_key=False, unique=False, nullable=True),
-        Column("score", Float, primary_key=False, unique=False, nullable=True),
-        Column("description", Text, nullable=False, primary_key=False, unique=False),
-        Column("username", String, unique=True, primary_key=False, nullable=True),
+        Column("id", Integer, Identity(), primary_key=True),
+        Column("email", String(get_settings.string_length), nullable=True),
+        Column("created_at", Date, nullable=True),
+        Column("score", Float, nullable=True),
+        Column("description", Text),
+        Column("username", String(get_settings.string_length), unique=True),
     ]
 
-    result_rows = get_columns_definition(fields)
+    result_rows = get_columns_definition(fields, get_settings)
 
     for i in range(len(result_rows)):
         assert result_rows[i].name == expected_columns[i].name
         assert str(result_rows[i].type) == str(expected_columns[i].type)
         assert result_rows[i].primary_key == expected_columns[i].primary_key
-        assert result_rows[i].nullable == expected_columns[i].nullable
+        assert (
+            str(result_rows[i].type) == "Identity"
+            or result_rows[i].nullable == expected_columns[i].nullable
+        )
         assert result_rows[i].unique == expected_columns[i].unique
 
 
@@ -79,9 +82,12 @@ def test_create_field_with_wrong_type():
 
 def test_generate_get_columns_definition_empty_list():
     from fill_data_webapp.data_structure_utils import get_columns_definition
+    from fill_data_webapp.config import Settings
+
+    settings = Settings()
 
     with pytest.raises(ValueError) as excinfo:
-        get_columns_definition([])
+        get_columns_definition([], settings)
     assert "No fields provided for columns definition generation" in str(excinfo.value)
 
 

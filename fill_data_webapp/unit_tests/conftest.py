@@ -65,6 +65,13 @@ def mock_table():
 
 
 @pytest.fixture
+def get_settings():
+    from fill_data_webapp.config import Settings
+
+    return Settings()
+
+
+@pytest.fixture
 def mock_metadata_success():
     mock_metadata = Mock(spec=sqlalchemy.MetaData)
     mock_metadata.schema = None
