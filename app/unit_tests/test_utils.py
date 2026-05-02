@@ -4,7 +4,7 @@ import pytest
 
 
 def test_get_db_conn_success(mocker, get_settings):
-    from fill_data_webapp.utils import get_db_engine
+    from app.utils import get_db_engine
 
     mocker.patch("sqlalchemy.create_engine", MagicMock(return_value="mocked_engine"))
 
@@ -13,7 +13,7 @@ def test_get_db_conn_success(mocker, get_settings):
 
 
 def test_get_db_conn_failure(mocker, get_settings):
-    from fill_data_webapp.utils import get_db_engine
+    from app.utils import get_db_engine
 
     mocker.patch("sqlalchemy.create_engine", side_effect=Exception("Mocked error"))
 

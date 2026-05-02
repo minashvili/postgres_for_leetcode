@@ -3,18 +3,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fill_data_webapp.models import FieldType
+from app.models import FieldType
 
 
 def test_generate_single_value_int(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_single_value
+    from app.data_content_utils import generate_single_value
 
     result_value = generate_single_value(FieldType.integer, faker, get_settings)
     assert type(result_value) is int
 
 
 def test_generate_single_value_email(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_single_value
+    from app.data_content_utils import generate_single_value
 
     result_value = generate_single_value(FieldType.email, faker, get_settings)
     assert type(result_value) is str
@@ -23,7 +23,7 @@ def test_generate_single_value_email(faker, get_settings):
 
 
 def test_generate_single_value_date(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_single_value
+    from app.data_content_utils import generate_single_value
 
     result_value = generate_single_value(FieldType.date, faker, get_settings)
     assert type(result_value) is str
@@ -31,29 +31,29 @@ def test_generate_single_value_date(faker, get_settings):
 
 
 def test_generate_single_value_float(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_single_value
+    from app.data_content_utils import generate_single_value
 
     result_value = generate_single_value(FieldType.float, faker, get_settings)
     assert type(result_value) is float
 
 
 def test_generate_single_value_multistring(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_single_value
+    from app.data_content_utils import generate_single_value
 
     result_value = generate_single_value(FieldType.text, faker, get_settings)
     assert type(result_value) is str
 
 
 def test_generate_single_value_random_type(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_single_value
+    from app.data_content_utils import generate_single_value
 
     result_value = generate_single_value("test", faker, get_settings)
     assert type(result_value) is str
 
 
 def test_generate_values_success(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     fields = [
         Field(name="id", type=FieldType.integer, primary_key=True),
@@ -84,8 +84,8 @@ def test_generate_values_success(faker, get_settings):
 
 
 def test_generate_values_unique_constraint_str(get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     mocked_faker = MagicMock()
 
@@ -101,8 +101,8 @@ def test_generate_values_unique_constraint_str(get_settings):
 
 
 def test_generate_values_unique_constraint_date_int(get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     mocked_faker = MagicMock()
 
@@ -118,8 +118,8 @@ def test_generate_values_unique_constraint_date_int(get_settings):
 
 
 def test_generate_values_unique_constraint_date_email(get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     mocked_faker = MagicMock()
 
@@ -135,8 +135,8 @@ def test_generate_values_unique_constraint_date_email(get_settings):
 
 
 def test_generate_values_unique_constraint_date(get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     mocked_faker = MagicMock()
 
@@ -152,8 +152,8 @@ def test_generate_values_unique_constraint_date(get_settings):
 
 
 def test_generate_values_nullable(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     fields = [Field(name="username", type="string", nullable=True)]
     row_number = 10_000
@@ -165,8 +165,8 @@ def test_generate_values_nullable(faker, get_settings):
 
 
 def test_generate_values_not_nullable(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
-    from fill_data_webapp.models import Field
+    from app.data_content_utils import generate_values
+    from app.models import Field
 
     fields = [Field(name="username", type="string", nullable=False)]
     row_number = 10_000
@@ -178,7 +178,7 @@ def test_generate_values_not_nullable(faker, get_settings):
 
 
 def test_generate_values_empty_list(faker, get_settings):
-    from fill_data_webapp.data_content_utils import generate_values
+    from app.data_content_utils import generate_values
 
     with pytest.raises(ValueError) as excinfo:
         generate_values([], faker, 10, get_settings)
@@ -186,7 +186,7 @@ def test_generate_values_empty_list(faker, get_settings):
 
 
 def test_get_row_count_success(mock_table, mock_engine_success):
-    from fill_data_webapp.data_content_utils import get_row_count
+    from app.data_content_utils import get_row_count
 
     result_count = get_row_count(mock_table, mock_engine_success)
 
@@ -194,7 +194,7 @@ def test_get_row_count_success(mock_table, mock_engine_success):
 
 
 def test_get_row_count_failure(mock_table, mock_engine_exception):
-    from fill_data_webapp.data_content_utils import get_row_count
+    from app.data_content_utils import get_row_count
 
     with pytest.raises(Exception) as excinfo:
         get_row_count(mock_table, mock_engine_exception)
@@ -204,8 +204,8 @@ def test_get_row_count_failure(mock_table, mock_engine_exception):
 def test_insert_generated_values_success(
     mock_table, mock_session_success, get_settings
 ):
-    from fill_data_webapp.data_content_utils import insert_generated_values
-    from fill_data_webapp.models import Field, FieldType
+    from app.data_content_utils import insert_generated_values
+    from app.models import Field, FieldType
 
     row_number = 10
 
@@ -229,8 +229,8 @@ def test_insert_generated_values_success(
 def test_insert_generated_values_failure_on_execute(
     mock_table, mock_session_exception, get_settings
 ):
-    from fill_data_webapp.data_content_utils import insert_generated_values
-    from fill_data_webapp.models import Field, FieldType
+    from app.data_content_utils import insert_generated_values
+    from app.models import Field, FieldType
 
     row_number = 10
 

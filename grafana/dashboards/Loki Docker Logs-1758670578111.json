@@ -1,84 +1,217 @@
 {
-  "annotations": {
-    "list": []
-  },
-  "editable": true,
-  "gnetId": null,
-  "graphTooltip": 0,
-  "id": null,
-  "iteration": 1695571200000,
-  "links": [],
-  "panels": [
-    {
-      "datasource": "Loki",
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 18,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "showLabels": true,
-        "showTime": true,
-        "wrapLogMessages": false
-      },
-      "targets": [
-        {
-          "expr": "{container=\"$container\"} |= \"$search\"",
-          "refId": "A"
-        }
-      ],
-      "title": "Logs by Container",
-      "type": "logs"
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "len7r4s",
+    "namespace": "default",
+    "uid": "29ba9908-fa37-4ea7-8e4f-7a660f4c02fb",
+    "resourceVersion": "1777730622606007",
+    "generation": 2,
+    "creationTimestamp": "2026-05-02T14:02:38Z",
+    "labels": {
+      "grafana.app/deprecatedInternalID": "1438871543631872"
+    },
+    "annotations": {
+      "grafana.app/createdBy": "user:ffku96v02d5ogd",
+      "grafana.app/folder": "",
+      "grafana.app/message": "universal dashboard",
+      "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
+      "grafana.app/updatedBy": "user:ffku96v02d5ogd",
+      "grafana.app/updatedTimestamp": "2026-05-02T14:03:42Z"
     }
-  ],
-  "schemaVersion": 37,
-  "style": "dark",
-  "tags": ["loki", "docker", "logs"],
-  "templating": {
-    "list": [
+  },
+  "spec": {
+    "annotations": [
       {
-        "current": {},
-        "datasource": "Loki",
-        "definition": "label_values(container)",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Container",
-        "multi": false,
-        "name": "container",
-        "options": [],
-        "query": "label_values(container)",
-        "refresh": 2,
-        "regex": "",
-        "sort": 1,
-        "type": "query"
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Logs by Container",
+          "description": "Docker container logs from Loki with container selector and regex search",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "loki",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "P8E80F9AEF21F6940"
+                      },
+                      "spec": {
+                        "direction": "backward",
+                        "editorMode": "code",
+                        "expr": "{container=~\"$container\"} |~ \"$search\"",
+                        "queryType": "range"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "logs",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "dedupStrategy": "none",
+                "enableInfiniteScrolling": false,
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showControls": false,
+                "showFieldSelector": false,
+                "showLabels": true,
+                "showLevel": true,
+                "showTime": true,
+                "sortOrder": "Descending",
+                "timestampResolution": "ms",
+                "unwrappedColumns": false,
+                "wrapLogMessage": false,
+                "wrapLogMessages": false
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 18,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "loki",
+      "docker",
+      "logs"
+    ],
+    "timeSettings": {
+      "timezone": "browser",
+      "from": "now-24h",
+      "to": "now",
+      "autoRefresh": "30s",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "Loki Docker Logs with Search",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "container",
+          "current": {
+            "text": "All",
+            "value": ".+"
+          },
+          "label": "Container",
+          "hide": "dontHide",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "loki",
+            "version": "v0",
+            "datasource": {
+              "name": "P8E80F9AEF21F6940"
+            },
+            "spec": {
+              "label": "container",
+              "refId": "LokiVariableQueryEditor-VariableQuery",
+              "stream": "",
+              "type": 1
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "alphabeticalAsc",
+          "definition": "",
+          "options": [],
+          "multi": false,
+          "includeAll": true,
+          "allowCustomValue": true
+        }
       },
       {
-        "current": {},
-        "datasource": "Loki",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Search",
-        "multi": false,
-        "name": "search",
-        "options": [],
-        "query": "",
-        "refresh": 1,
-        "type": "textbox"
+        "kind": "TextVariable",
+        "spec": {
+          "name": "search",
+          "current": {
+            "text": ".*",
+            "value": ".*"
+          },
+          "query": ".*",
+          "label": "Search",
+          "hide": "dontHide",
+          "skipUrlSync": false
+        }
       }
     ]
-  },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "browser",
-  "title": "Loki Docker Logs with Search",
-  "version": 1
+  }
 }

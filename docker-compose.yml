@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data:z
 
   web:
-    build: fill_data_webapp
+    build: app
     container_name: fastapi_app
     env_file:
       - .env
@@ -23,7 +23,7 @@ services:
     depends_on:
       - postgres
     volumes:
-      - ./fill_data_webapp:/app:z
+      - ./app:/app:z
     command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
 
   postgres_exporter:

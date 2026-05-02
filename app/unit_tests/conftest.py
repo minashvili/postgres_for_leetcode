@@ -66,7 +66,7 @@ def mock_table():
 
 @pytest.fixture
 def get_settings():
-    from fill_data_webapp.config import Settings
+    from app.app.config import Settings
 
     return Settings()
 

@@ -5,13 +5,13 @@ import uvicorn
 from sqlalchemy import MetaData
 from sqlalchemy.orm import Session
 
-from fill_data_webapp import (
+from app import (
     models,
     utils,
     data_structure_utils,
     data_content_utils,
 )
-from fill_data_webapp.config import settings
+from app.config import settings
 
 
 app = FastAPI()

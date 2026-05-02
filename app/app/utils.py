@@ -2,7 +2,7 @@ import logging
 
 import sqlalchemy
 
-from fill_data_webapp.config import Settings
+from app.config import Settings
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)

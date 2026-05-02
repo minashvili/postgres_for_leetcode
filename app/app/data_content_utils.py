@@ -12,8 +12,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session
 
-from fill_data_webapp.config import Settings
-from fill_data_webapp.models import Field, FieldType
+from app.config import Settings
+from app.models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)

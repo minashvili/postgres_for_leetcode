@@ -1,11 +1,11 @@
 import pytest
 from pydantic_core import ValidationError
 
-from fill_data_webapp.models import Payload
+from app.models import Payload
 
 
 def test_unique_and_nullable_field_definition(get_settings):
-    from fill_data_webapp.models import Field
+    from app.models import Field
 
     with pytest.raises(ValidationError) as excinfo:
         Field(name="username", type="string", unique=True, nullable=True)
@@ -16,7 +16,7 @@ def test_unique_and_nullable_field_definition(get_settings):
 
 
 def test_nullable_and_primary_key_field_definition(get_settings):
-    from fill_data_webapp.models import Field
+    from app.models import Field
 
     with pytest.raises(ValidationError) as excinfo:
         Field(name="username", type="string", nullable=True, primary_key=True)
@@ -27,7 +27,7 @@ def test_nullable_and_primary_key_field_definition(get_settings):
 
 
 def test_not_unique_fields(get_settings):
-    from fill_data_webapp.models import Field
+    from app.models import Field
 
     with pytest.raises(ValueError) as excinfo:
         Payload(
@@ -42,7 +42,7 @@ def test_not_unique_fields(get_settings):
 
 
 def test_multiple_primary_keys_fields(get_settings):
-    from fill_data_webapp.models import Field
+    from app.models import Field
 
     with pytest.raises(ValueError) as excinfo:
         Payload(
@@ -59,7 +59,7 @@ def test_multiple_primary_keys_fields(get_settings):
 
 
 def test_wrong_table_name():
-    from fill_data_webapp.models import Payload
+    from app.models import Payload
 
     with pytest.raises(ValueError) as excinfo:
         Payload(
@@ -75,7 +75,7 @@ def test_wrong_table_name():
 
 
 def test_successful_payload_creation(get_settings):
-    from fill_data_webapp.models import Field, FieldType, Payload
+    from app.models import Field, FieldType, Payload
 
     fields = [
         Field(name="id", type=FieldType.integer, primary_key=True),

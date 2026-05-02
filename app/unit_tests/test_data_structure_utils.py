@@ -6,11 +6,11 @@ import sqlalchemy
 from pydantic import ValidationError
 from sqlalchemy import Column, Integer, String, Date, Float, Text, Identity
 
-from fill_data_webapp.models import FieldType
+from app.models import FieldType
 
 
 def test_create_table_success(mock_engine_success, mock_metadata_success):
-    from fill_data_webapp.data_structure_utils import create_table
+    from app.data_structure_utils import create_table
 
     dummy_table_name = "dummy_table_2"
     dummy_columns = [Mock(spec=sqlalchemy.Column)]
@@ -24,7 +24,7 @@ def test_create_table_success(mock_engine_success, mock_metadata_success):
 def test_create_table_if_not_exists_failure(
     mock_engine_success, mock_metadata_exception
 ):
-    from fill_data_webapp.data_structure_utils import create_table
+    from app.data_structure_utils import create_table
 
     dummy_table_name = "dummy_table"
     dummy_columns = [Mock(spec=sqlalchemy.Column)]
@@ -40,8 +40,8 @@ def test_create_table_if_not_exists_failure(
 
 
 def test_generate_get_columns_definition_success(get_settings):
-    from fill_data_webapp.data_structure_utils import get_columns_definition
-    from fill_data_webapp.models import Field
+    from app.data_structure_utils import get_columns_definition
+    from app.models import Field
 
     fields = [
         Field(name="id", type="int", primary_key=True),
@@ -74,15 +74,15 @@ def test_generate_get_columns_definition_success(get_settings):
 
 
 def test_create_field_with_wrong_type():
-    from fill_data_webapp.models import Field
+    from app.models import Field
 
     with pytest.raises(ValidationError):
         Field(name="email", type="unknown_type")
 
 
 def test_generate_get_columns_definition_empty_list():
-    from fill_data_webapp.data_structure_utils import get_columns_definition
-    from fill_data_webapp.config import Settings
+    from app.data_structure_utils import get_columns_definition
+    from app.config import Settings
 
     settings = Settings()
 
@@ -92,7 +92,7 @@ def test_generate_get_columns_definition_empty_list():
 
 
 def test_get_existing_table_success(mock_table, mock_metadata_success):
-    from fill_data_webapp.data_structure_utils import get_existing_table
+    from app.data_structure_utils import get_existing_table
 
     result_value = get_existing_table("dummy_table", mock_metadata_success)
     assert result_value is not None
@@ -101,14 +101,14 @@ def test_get_existing_table_success(mock_table, mock_metadata_success):
 
 
 def test_drop_table_success(mock_table, mock_metadata_success, mock_engine_success):
-    from fill_data_webapp.data_structure_utils import drop_table
+    from app.data_structure_utils import drop_table
 
     drop_table(mock_table, mock_metadata_success, mock_engine_success)
     mock_metadata_success.drop_all.assert_called_once()
 
 
 def test_drop_table_error(mock_table, mock_metadata_exception, mock_engine_success):
-    from fill_data_webapp.data_structure_utils import drop_table
+    from app.data_structure_utils import drop_table
 
     with pytest.raises(Exception) as excinfo:
         drop_table(mock_table, mock_metadata_exception, mock_engine_success)

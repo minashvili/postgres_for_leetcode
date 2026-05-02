@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     batch_size: int = 10_000
 
-    model_config = SettingsConfigDict(env_file="../.env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file="../../.env", env_file_encoding="utf-8")
 
 
 settings = Settings()  # type: ignore
