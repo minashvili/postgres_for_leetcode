@@ -66,3 +66,8 @@ ruff format .
 python -m coverage run -m pytest
 python -m coverage report -m 
 ```
+
+## Check mypy type annotations
+``` bash
+mypy .
+```

@@ -2,21 +2,22 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
-
-from app.models import FieldType
+import sqlalchemy.types
 
 
 def test_generate_single_value_int(faker, get_settings):
     from app.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.integer, faker, get_settings)
+    field = sqlalchemy.Column("id", sqlalchemy.types.Integer)
+    result_value = generate_single_value(field, faker, get_settings)
     assert type(result_value) is int
 
 
 def test_generate_single_value_email(faker, get_settings):
     from app.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.email, faker, get_settings)
+    field = sqlalchemy.Column("email", sqlalchemy.types.String)
+    result_value = generate_single_value(field, faker, get_settings)
     assert type(result_value) is str
     assert "@" in result_value
     assert "." in result_value
@@ -25,7 +26,8 @@ def test_generate_single_value_email(faker, get_settings):
 def test_generate_single_value_date(faker, get_settings):
     from app.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.date, faker, get_settings)
+    field = sqlalchemy.Column("test", sqlalchemy.types.Date)
+    result_value = generate_single_value(field, faker, get_settings)
     assert type(result_value) is str
     assert len(result_value.split("-")) == 3
 
@@ -33,36 +35,31 @@ def test_generate_single_value_date(faker, get_settings):
 def test_generate_single_value_float(faker, get_settings):
     from app.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.float, faker, get_settings)
+    field = sqlalchemy.Column("test", sqlalchemy.types.Float)
+    result_value = generate_single_value(field, faker, get_settings)
     assert type(result_value) is float
 
 
 def test_generate_single_value_multistring(faker, get_settings):
     from app.data_content_utils import generate_single_value
 
-    result_value = generate_single_value(FieldType.text, faker, get_settings)
-    assert type(result_value) is str
-
-
-def test_generate_single_value_random_type(faker, get_settings):
-    from app.data_content_utils import generate_single_value
-
-    result_value = generate_single_value("test", faker, get_settings)
+    field = sqlalchemy.Column("test", sqlalchemy.types.Text)
+    result_value = generate_single_value(field, faker, get_settings)
     assert type(result_value) is str
 
 
 def test_generate_values_success(faker, get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
     fields = [
-        Field(name="id", type=FieldType.integer, primary_key=True),
-        Field(name="email", type=FieldType.email, nullable=False),
-        Field(name="created_at", type=FieldType.date, nullable=False),
-        Field(name="score", type=FieldType.float, nullable=False),
-        Field(name="description", type=FieldType.text, nullable=False),
-        Field(name="username", type="string", nullable=False),
+        sqlalchemy.Column("id", sqlalchemy.types.Integer, primary_key=True),
+        sqlalchemy.Column("email", sqlalchemy.types.String, nullable=False),
+        sqlalchemy.Column("created_at", sqlalchemy.types.Date, nullable=False),
+        sqlalchemy.Column("score", sqlalchemy.types.Float, nullable=False),
+        sqlalchemy.Column("description", sqlalchemy.types.Text, nullable=False),
+        sqlalchemy.Column("username", sqlalchemy.types.String, nullable=False),
     ]
+
     row_number = 10
 
     result_rows = generate_values(fields, faker, row_number, get_settings)
@@ -85,11 +82,14 @@ def test_generate_values_success(faker, get_settings):
 
 def test_generate_values_unique_constraint_str(get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
     mocked_faker = MagicMock()
 
-    fields = [Field(name="username", type="string", unique=True, nullable=False)]
+    fields = [
+        sqlalchemy.Column(
+            "username", sqlalchemy.types.String, unique=True, nullable=False
+        )
+    ]
     row_number = 2
 
     result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
@@ -102,11 +102,14 @@ def test_generate_values_unique_constraint_str(get_settings):
 
 def test_generate_values_unique_constraint_date_int(get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
     mocked_faker = MagicMock()
 
-    fields = [Field(name="counter", type="integer", unique=True, nullable=False)]
+    fields = [
+        sqlalchemy.Column(
+            "counter", sqlalchemy.types.Integer, unique=True, nullable=False
+        )
+    ]
     row_number = 2
 
     result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
@@ -119,11 +122,12 @@ def test_generate_values_unique_constraint_date_int(get_settings):
 
 def test_generate_values_unique_constraint_date_email(get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
     mocked_faker = MagicMock()
 
-    fields = [Field(name="email", type="email", unique=True, nullable=False)]
+    fields = [
+        sqlalchemy.Column("email", sqlalchemy.types.String, unique=True, nullable=False)
+    ]
     row_number = 2
 
     result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
@@ -136,11 +140,14 @@ def test_generate_values_unique_constraint_date_email(get_settings):
 
 def test_generate_values_unique_constraint_date(get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
     mocked_faker = MagicMock()
 
-    fields = [Field(name="start_date", type="date", unique=True, nullable=False)]
+    fields = [
+        sqlalchemy.Column(
+            "start_date", sqlalchemy.types.Date, unique=True, nullable=False
+        )
+    ]
     row_number = 2
 
     result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
@@ -153,9 +160,8 @@ def test_generate_values_unique_constraint_date(get_settings):
 
 def test_generate_values_nullable(faker, get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
-    fields = [Field(name="username", type="string", nullable=True)]
+    fields = [sqlalchemy.Column("username", sqlalchemy.types.String, nullable=True)]
     row_number = 10_000
 
     result_rows = generate_values(fields, faker, row_number, get_settings)
@@ -166,9 +172,8 @@ def test_generate_values_nullable(faker, get_settings):
 
 def test_generate_values_not_nullable(faker, get_settings):
     from app.data_content_utils import generate_values
-    from app.models import Field
 
-    fields = [Field(name="username", type="string", nullable=False)]
+    fields = [sqlalchemy.Column("username", sqlalchemy.types.String, nullable=False)]
     row_number = 10_000
 
     result_rows = generate_values(fields, faker, row_number, get_settings)
@@ -205,17 +210,17 @@ def test_insert_generated_values_success(
     mock_table, mock_session_success, get_settings
 ):
     from app.data_content_utils import insert_generated_values
-    from app.models import Field, FieldType
 
     row_number = 10
 
     fields = [
-        Field(name="id", type=FieldType.integer, primary_key=True),
-        Field(name="email", type=FieldType.email, nullable=False),
+        sqlalchemy.Column("id", sqlalchemy.types.Integer, primary_key=True),
+        sqlalchemy.Column("email", sqlalchemy.types.String, nullable=False),
     ]
+    mock_table.columns = fields
 
     result_rows = insert_generated_values(
-        mock_table, row_number, fields, mock_session_success, get_settings
+        mock_table, row_number, mock_session_success, get_settings
     )
 
     mock_session_success.commit.assert_called_once()
@@ -230,17 +235,17 @@ def test_insert_generated_values_failure_on_execute(
     mock_table, mock_session_exception, get_settings
 ):
     from app.data_content_utils import insert_generated_values
-    from app.models import Field, FieldType
 
     row_number = 10
 
     fields = [
-        Field(name="id", type=FieldType.integer, primary_key=True),
-        Field(name="email", type=FieldType.email),
+        sqlalchemy.Column("id", sqlalchemy.types.Integer, primary_key=True),
+        sqlalchemy.Column("email", sqlalchemy.types.String, nullable=False),
     ]
+    mock_table.columns = fields
 
     with pytest.raises(Exception) as excinfo:
         insert_generated_values(
-            mock_table, row_number, fields, mock_session_exception, get_settings
+            mock_table, row_number, mock_session_exception, get_settings
         )
     assert "Mocked error" in str(excinfo.value)

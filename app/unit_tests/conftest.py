@@ -54,6 +54,8 @@ def get_mock_table():
     dummy_column = Mock(spec=Column)
     dummy_column.name = "dummy_column"
     dummy_column.type = Integer
+    dummy_column.unique = False
+    dummy_column.nullable = False
     mock_table.columns = [dummy_column]
 
     return mock_table
@@ -66,7 +68,7 @@ def mock_table():
 
 @pytest.fixture
 def get_settings():
-    from app.app.config import Settings
+    from app.config import Settings
 
     return Settings()
 

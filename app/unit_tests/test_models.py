@@ -1,8 +1,6 @@
 import pytest
 from pydantic_core import ValidationError
 
-from app.models import Payload
-
 
 def test_unique_and_nullable_field_definition(get_settings):
     from app.models import Field
@@ -27,12 +25,11 @@ def test_nullable_and_primary_key_field_definition(get_settings):
 
 
 def test_not_unique_fields(get_settings):
-    from app.models import Field
+    from app.models import Field, CreateTablePayload
 
     with pytest.raises(ValueError) as excinfo:
-        Payload(
+        CreateTablePayload(
             table_name="test_table",
-            row_number=10,
             fields=[
                 Field(name="id", type="integer", primary_key=True),
                 Field(name="id", type="string", unique=True),
@@ -42,12 +39,11 @@ def test_not_unique_fields(get_settings):
 
 
 def test_multiple_primary_keys_fields(get_settings):
-    from app.models import Field
+    from app.models import Field, CreateTablePayload
 
     with pytest.raises(ValueError) as excinfo:
-        Payload(
+        CreateTablePayload(
             table_name="test_table",
-            row_number=10,
             fields=[
                 Field(name="id", type="integer", primary_key=True),
                 Field(name="name", type="string", primary_key=True),
@@ -59,13 +55,12 @@ def test_multiple_primary_keys_fields(get_settings):
 
 
 def test_wrong_table_name():
-    from app.models import Payload
+    from app.models import GeneratePayload
 
     with pytest.raises(ValueError) as excinfo:
-        Payload(
+        GeneratePayload(
             table_name="123invalid-table-name",
             row_number=10,
-            fields=[],
         )
     assert (
         "table_name must match regex ^[A-Za-z_][A-Za-z0-9_]{0,62}$ and be <= 63 chars "
@@ -75,22 +70,12 @@ def test_wrong_table_name():
 
 
 def test_successful_payload_creation(get_settings):
-    from app.models import Field, FieldType, Payload
+    from app.models import GeneratePayload
 
-    fields = [
-        Field(name="id", type=FieldType.integer, primary_key=True),
-        Field(name="email", type=FieldType.email, nullable=True),
-        Field(name="username", type=FieldType.string, unique=True),
-    ]
-
-    payload = Payload(
+    payload = GeneratePayload(
         table_name="valid_table_name",
         row_number=100,
-        fields=fields,
-        force_recreate_table=True,
     )
 
     assert payload.table_name == "valid_table_name"
     assert payload.row_number == 100
-    assert payload.fields == fields
-    assert payload.force_recreate_table is True

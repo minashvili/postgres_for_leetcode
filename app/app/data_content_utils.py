@@ -11,38 +11,37 @@ from sqlalchemy import (
     Table,
 )
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from app.config import Settings
-from app.models import Field, FieldType
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
 
 
-def generate_single_value(field_type: FieldType, fake: Faker, settings: Settings):
-    match field_type:
-        case FieldType.integer:
-            return random.randint(settings.min_int, settings.max_int)
-        case FieldType.email:
-            return fake.email()
-        case FieldType.date:
-            return fake.date()
-        case FieldType.float:
-            return round(
-                random.uniform(settings.min_float, settings.max_float),
-                settings.float_precision,
-            )
-        case FieldType.text:
-            word_count = random.randint(
-                settings.text_min_word_count, settings.text_max_word_count
-            )
-            return " ".join(fake.words(nb=word_count))
+def generate_single_value(field, fake: Faker, settings: Settings):
+    if isinstance(field.type, sqlalchemy.types.Integer):
+        return random.randint(settings.min_int, settings.max_int)
+    elif isinstance(field.type, sqlalchemy.types.String) and "email" in field.name:
+        return fake.email()
+    elif isinstance(field.type, sqlalchemy.types.Date):
+        return fake.date()
+    elif isinstance(field.type, sqlalchemy.types.Float):
+        return round(
+            random.uniform(settings.min_float, settings.max_float),
+            settings.float_precision,
+        )
+    elif isinstance(field.type, sqlalchemy.types.Text):
+        word_count = random.randint(
+            settings.text_min_word_count, settings.text_max_word_count
+        )
+        return " ".join(fake.words(nb=word_count))
 
     return fake.word()
 
 
 def generate_values(
-    fields: List[Field], fake: Faker, row_number: int, settings: Settings
+    fields: ReadOnlyColumnCollection, fake: Faker, row_number: int, settings: Settings
 ):
     if len(fields) == 0:
         raise ValueError("No fields provided for value generation")
@@ -53,22 +52,17 @@ def generate_values(
         generated_values = {}
         for field in fields:
             if field.unique:
-                if field.type == FieldType.integer:
+                if isinstance(field.type, sqlalchemy.types.Integer):
                     if field.name not in previous_value:
                         previous_value[field.name] = settings.min_int
                     value = previous_value[field.name] + 1
                     previous_value[field.name] = value
                     generated_values[field.name] = value
                     continue
-                elif field.type == FieldType.string or field.type == FieldType.text:
-                    if field.name not in previous_value:
-                        previous_value[field.name] = settings.min_int
-                    counter = previous_value[field.name] + 1
-                    value = f"dummy_value_{counter}"
-                    previous_value[field.name] = counter
-                    generated_values[field.name] = value
-                    continue
-                elif field.type == FieldType.email:
+                elif (
+                    isinstance(field.type, sqlalchemy.types.String)
+                    and "email" in field.name
+                ):
                     if field.name not in previous_value:
                         previous_value[field.name] = settings.min_int
                     counter = previous_value[field.name] + 1
@@ -76,7 +70,17 @@ def generate_values(
                     previous_value[field.name] = counter
                     generated_values[field.name] = value
                     continue
-                elif field.type == FieldType.date:
+                elif isinstance(field.type, sqlalchemy.types.String) or isinstance(
+                    field.type, sqlalchemy.types.Text
+                ):
+                    if field.name not in previous_value:
+                        previous_value[field.name] = settings.min_int
+                    counter = previous_value[field.name] + 1
+                    value = f"dummy_value_{counter}"
+                    previous_value[field.name] = counter
+                    generated_values[field.name] = value
+                    continue
+                elif isinstance(field.type, sqlalchemy.types.Date):
                     if field.name not in previous_value:
                         previous_value[field.name] = settings.min_date
                     value = previous_value[field.name] + timedelta(days=1)
@@ -84,10 +88,10 @@ def generate_values(
                     generated_values[field.name] = value
                     continue
 
-            if field.type == FieldType.integer and field.primary_key:
+            if isinstance(field.type, sqlalchemy.types.Integer) and field.primary_key:
                 continue
 
-            value = generate_single_value(field.type, fake, settings)
+            value = generate_single_value(field, fake, settings)
 
             if field.nullable and random.random() < settings.null_probability:
                 value = None
@@ -103,7 +107,9 @@ def get_row_count(table: Table, engine: Engine):
         stmt = sqlalchemy.select(sqlalchemy.func.count()).select_from(table)
         with engine.connect() as conn:
             result = conn.execute(stmt)
-            total_count = result.first()[0]
+            total_count = result.first()
+            if total_count:
+                total_count = total_count[0]
 
         logger.info("Total rows in table {}: {}".format(table.name, total_count))
 
@@ -114,13 +120,13 @@ def get_row_count(table: Table, engine: Engine):
 
 
 def insert_generated_values(
-    table: Table, row_number: int, fields, session: Session, settings: Settings
+    table: Table, row_number: int, session: Session, settings: Settings
 ) -> List:
     logger.info("Generating and inserting values")
 
     fake = Faker()
 
-    values = generate_values(fields, fake, row_number, settings)
+    values = generate_values(table.columns, fake, row_number, settings)
 
     chunk_values = [
         values[i : i + settings.batch_size]

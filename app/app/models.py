@@ -52,9 +52,8 @@ class Field(BaseModel):
         return self
 
 
-class Payload(BaseModel):
+class CreateTablePayload(BaseModel):
     table_name: str
-    row_number: int = 10
     fields: List[Field]
     force_recreate_table: bool = False
 
@@ -76,6 +75,16 @@ class Payload(BaseModel):
         return self
 
 
+class GeneratePayload(BaseModel):
+    table_name: str
+    row_number: int = 10
+
+    @field_validator("table_name")
+    @classmethod
+    def validate_table_name(cls, v: str) -> str:
+        return _validate_identifier(v, "table_name")
+
+
 def _validate_identifier(value: str, what: str) -> str:
     v = value.strip()
     if not IDENT_RE.fullmatch(v):
@@ -84,3 +93,7 @@ def _validate_identifier(value: str, what: str) -> str:
             "(letters/digits/underscore; must not start with a digit)."
         )
     return v
+
+
+class LeetCodeTablePayload(BaseModel):
+    sql_query: str

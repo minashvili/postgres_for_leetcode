@@ -1,6 +1,8 @@
 import logging
 
 from typing import List
+
+import sqlalchemy
 from sqlalchemy import (
     Engine,
     MetaData,
@@ -12,20 +14,18 @@ from sqlalchemy import (
     Date,
     Boolean,
     Text,
-    Identity,
 )
-from sqlalchemy.sql.type_api import TypeEngine
 
 from app.config import Settings
-from app.models import Field, FieldType
+from app.models import Field
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
 
 
-def get_existing_table(table_name: str, db_metadata: MetaData) -> Table:
+def get_existing_table(table_name: str, db_metadata: MetaData) -> Table | None:
     logger.info("Getting existing columns in DB for table {}".format(table_name))
-    return db_metadata.tables.get(table_name)
+    return db_metadata.tables.get(table_name.lower())
 
 
 def get_columns_definition(fields: List[Field], settings: Settings) -> list[Column]:
@@ -43,14 +43,12 @@ def get_columns_definition(fields: List[Field], settings: Settings) -> list[Colu
         "boolean": Boolean,
         "text": Text,
     }
-    sqlalchemy_columns = []
+    sqlalchemy_columns: list[sqlalchemy.Column] = []
 
     for f in fields:
-        col_type: TypeEngine = type_mapping.get(f.type.lower())
+        col_type: object = type_mapping.get(f.type.lower())
 
         field_params = {"name": f.name, "type_": col_type}
-        if f.type == FieldType.integer and f.primary_key:
-            field_params["autoincrement"] = Identity()
 
         if f.primary_key:
             field_params["primary_key"] = f.primary_key
@@ -58,7 +56,7 @@ def get_columns_definition(fields: List[Field], settings: Settings) -> list[Colu
             field_params["nullable"] = f.nullable
         if f.unique:
             field_params["unique"] = f.unique
-        sqlalchemy_columns.append(Column(**field_params))
+        sqlalchemy_columns.append(Column(**field_params))  # type: ignore
 
     logger.info("Columns definition: {}".format(sqlalchemy_columns))
 
