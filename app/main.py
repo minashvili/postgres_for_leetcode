@@ -59,10 +59,11 @@ def generate_data(payload: list[models.GeneratePayload]):
     db_metadata.reflect(engine)
 
     for item in payload:
-        table = data_structure_utils.get_existing_table(item.table_name, db_metadata)
+        table_name = item.table_name.lower().strip()
+        table = data_structure_utils.get_existing_table(table_name, db_metadata)
 
         if table is None:
-            raise HTTPException(404, "Table {} not found".format(item.table_name))
+            raise HTTPException(404, "Table {} not found".format(table_name))
 
         with Session(engine) as session:
             data_content_utils.insert_generated_values(

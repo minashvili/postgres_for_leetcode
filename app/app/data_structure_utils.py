@@ -26,8 +26,6 @@ logging.basicConfig(level=logging.DEBUG)
 def get_existing_table(table_name: str, db_metadata: MetaData) -> Table | None:
     logger.info("Getting existing columns in DB for table {}".format(table_name))
 
-    table_name = table_name.strip()
-
     if table_name in db_metadata.tables:
         return db_metadata.tables[table_name]
 
