@@ -55,10 +55,13 @@ def create_table(payload: models.CreateTablePayload):
 def generate_data(payload: list[models.GeneratePayload]):
     result = {}
 
+    db_metadata.clear()
+    db_metadata.reflect(engine)
+
     for item in payload:
         table = data_structure_utils.get_existing_table(item.table_name, db_metadata)
 
-        if not table:
+        if table is None:
             raise HTTPException(404, "Table {} not found".format(item.table_name))
 
         with Session(engine) as session:
@@ -98,6 +101,8 @@ def create_tables_leetcode(sql: str = Body(..., media_type="text/plain")):
                 connection.rollback()
                 logger.error("Error executing SQL statements: {}".format(e))
                 raise HTTPException(500, "Error executing SQL statements: {}".format(e))
+        db_metadata.clear()
+        db_metadata.reflect(engine)
     except Exception as e:
         logger.error("Database connection error: {}".format(e))
         raise HTTPException(500, "Database connection error: {}".format(e))
