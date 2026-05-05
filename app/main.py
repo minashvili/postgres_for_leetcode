@@ -3,7 +3,7 @@ import logging
 import sqlalchemy
 from fastapi import FastAPI, HTTPException, Body
 import uvicorn
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, Inspector
 from sqlalchemy.orm import Session
 
 from app import (  # type: ignore
@@ -62,12 +62,28 @@ def generate_data(payload: list[models.GeneratePayload]):
         table_name = item.table_name.lower().strip()
         table = data_structure_utils.get_existing_table(table_name, db_metadata)
 
+        insp = Inspector.from_engine(engine)
+        unique_columns = [
+            col["column_names"][0] for col in insp.get_unique_constraints(table_name)
+        ]  # for now only support single column unique constraints
+
         if table is None:
             raise HTTPException(404, "Table {} not found".format(table_name))
 
+        if (
+            data_content_utils.get_row_count(table, engine) > 0
+            and len(unique_columns) > 0
+        ):
+            raise HTTPException(
+                400,
+                "Table {} has unique constraints and already contains data. Cannot generate new data without violating unique constraints.".format(
+                    table_name
+                ),
+            )
+
         with Session(engine) as session:
             data_content_utils.insert_generated_values(
-                table, item.row_number, session, settings
+                table, item.row_number, session, settings, unique_columns
             )
         total_count = data_content_utils.get_row_count(table, engine)
 

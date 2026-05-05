@@ -61,8 +61,11 @@ def test_generate_values_success(faker, get_settings):
     ]
 
     row_number = 10
+    unique_columns = []
 
-    result_rows = generate_values(fields, faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, faker, row_number, get_settings, unique_columns
+    )
     assert len(result_rows) == row_number
     for row in result_rows:
         assert len(row) == len(fields) - 1  # identity does not return
@@ -91,8 +94,11 @@ def test_generate_values_unique_constraint_str(get_settings):
         )
     ]
     row_number = 2
+    unique_columns = ["username"]
 
-    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, mocked_faker, row_number, get_settings, unique_columns
+    )
     assert result_rows == [
         {"username": "dummy_value_1"},
         {"username": "dummy_value_2"},
@@ -111,8 +117,11 @@ def test_generate_values_unique_constraint_date_int(get_settings):
         )
     ]
     row_number = 2
+    unique_columns = ["counter"]
 
-    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, mocked_faker, row_number, get_settings, unique_columns
+    )
     assert result_rows == [
         {"counter": 1},
         {"counter": 2},
@@ -129,8 +138,11 @@ def test_generate_values_unique_constraint_date_email(get_settings):
         sqlalchemy.Column("email", sqlalchemy.types.String, unique=True, nullable=False)
     ]
     row_number = 2
+    unique_columns = ["email"]
 
-    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, mocked_faker, row_number, get_settings, unique_columns
+    )
     assert result_rows == [
         {"email": "dummy_email_1@dummy.dummy"},
         {"email": "dummy_email_2@dummy.dummy"},
@@ -149,8 +161,11 @@ def test_generate_values_unique_constraint_date(get_settings):
         )
     ]
     row_number = 2
+    unique_columns = ["start_date"]
 
-    result_rows = generate_values(fields, mocked_faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, mocked_faker, row_number, get_settings, unique_columns
+    )
     assert result_rows == [
         {"start_date": datetime(2000, 1, 2)},
         {"start_date": datetime(2000, 1, 3)},
@@ -163,8 +178,11 @@ def test_generate_values_nullable(faker, get_settings):
 
     fields = [sqlalchemy.Column("username", sqlalchemy.types.String, nullable=True)]
     row_number = 10_000
+    unique_columns = []
 
-    result_rows = generate_values(fields, faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, faker, row_number, get_settings, unique_columns
+    )
     assert len(result_rows) == row_number
     values = [value["username"] for value in result_rows]
     assert None in values
@@ -175,8 +193,11 @@ def test_generate_values_not_nullable(faker, get_settings):
 
     fields = [sqlalchemy.Column("username", sqlalchemy.types.String, nullable=False)]
     row_number = 10_000
+    unique_columns = []
 
-    result_rows = generate_values(fields, faker, row_number, get_settings)
+    result_rows = generate_values(
+        fields, faker, row_number, get_settings, unique_columns
+    )
     assert len(result_rows) == row_number
     values = [value["username"] for value in result_rows]
     assert None not in values
@@ -185,8 +206,10 @@ def test_generate_values_not_nullable(faker, get_settings):
 def test_generate_values_empty_list(faker, get_settings):
     from app.data_content_utils import generate_values
 
+    unique_columns = []
+
     with pytest.raises(ValueError) as excinfo:
-        generate_values([], faker, 10, get_settings)
+        generate_values([], faker, 10, get_settings, unique_columns)
     assert "No fields provided for value generation" in str(excinfo.value)
 
 
@@ -218,9 +241,10 @@ def test_insert_generated_values_success(
         sqlalchemy.Column("email", sqlalchemy.types.String, nullable=False),
     ]
     mock_table.columns = fields
+    unique_columns = []
 
     result_rows = insert_generated_values(
-        mock_table, row_number, mock_session_success, get_settings
+        mock_table, row_number, mock_session_success, get_settings, unique_columns
     )
 
     mock_session_success.commit.assert_called_once()
@@ -243,9 +267,10 @@ def test_insert_generated_values_failure_on_execute(
         sqlalchemy.Column("email", sqlalchemy.types.String, nullable=False),
     ]
     mock_table.columns = fields
+    unique_columns = ["id"]
 
     with pytest.raises(Exception) as excinfo:
         insert_generated_values(
-            mock_table, row_number, mock_session_exception, get_settings
+            mock_table, row_number, mock_session_exception, get_settings, unique_columns
         )
     assert "Mocked error" in str(excinfo.value)

@@ -23,7 +23,7 @@ def generate_single_value(field, fake: Faker, settings: Settings):
     if isinstance(field.type, sqlalchemy.types.Integer):
         return random.randint(settings.min_int, settings.max_int)
     elif isinstance(field.type, sqlalchemy.types.String) and "email" in field.name:
-        return fake.email()
+        return fake.email()[: field.type.length]
     elif isinstance(field.type, sqlalchemy.types.Date):
         return fake.date()
     elif isinstance(field.type, sqlalchemy.types.Float):
@@ -35,13 +35,23 @@ def generate_single_value(field, fake: Faker, settings: Settings):
         word_count = random.randint(
             settings.text_min_word_count, settings.text_max_word_count
         )
-        return " ".join(fake.words(nb=word_count))
+        result = " ".join(fake.words(nb=word_count))[: field.type.length]
+        return result
 
-    return fake.word()
+    result = (
+        fake.word()[: field.type.length]
+        if hasattr(field.type, "length")
+        else fake.word()
+    )
+    return result
 
 
 def generate_values(
-    fields: ReadOnlyColumnCollection, fake: Faker, row_number: int, settings: Settings
+    fields: ReadOnlyColumnCollection,
+    fake: Faker,
+    row_number: int,
+    settings: Settings,
+    unique_columns: List[str],
 ):
     if len(fields) == 0:
         raise ValueError("No fields provided for value generation")
@@ -51,7 +61,7 @@ def generate_values(
     for _ in range(row_number):
         generated_values = {}
         for field in fields:
-            if field.unique:
+            if field.name in unique_columns:
                 if isinstance(field.type, sqlalchemy.types.Integer):
                     if field.name not in previous_value:
                         previous_value[field.name] = settings.min_int
@@ -73,10 +83,18 @@ def generate_values(
                 elif isinstance(field.type, sqlalchemy.types.String) or isinstance(
                     field.type, sqlalchemy.types.Text
                 ):
+                    length = (
+                        field.type.length
+                        if hasattr(field.type, "length")
+                        and field.type.length is not None
+                        else settings.string_length
+                    )
+                    max_counter_length = len(str(row_number))
+                    dummy_value = "dummy_value_"[: length - max_counter_length]
                     if field.name not in previous_value:
                         previous_value[field.name] = settings.min_int
                     counter = previous_value[field.name] + 1
-                    value = f"dummy_value_{counter}"
+                    value = f"{dummy_value}{counter}"
                     previous_value[field.name] = counter
                     generated_values[field.name] = value
                     continue
@@ -120,13 +138,17 @@ def get_row_count(table: Table, engine: Engine):
 
 
 def insert_generated_values(
-    table: Table, row_number: int, session: Session, settings: Settings
+    table: Table,
+    row_number: int,
+    session: Session,
+    settings: Settings,
+    unique_columns: List[str],
 ) -> List:
     logger.info("Generating and inserting values")
 
     fake = Faker()
 
-    values = generate_values(table.columns, fake, row_number, settings)
+    values = generate_values(table.columns, fake, row_number, settings, unique_columns)
 
     chunk_values = [
         values[i : i + settings.batch_size]
